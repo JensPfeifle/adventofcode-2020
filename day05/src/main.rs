@@ -1,40 +1,32 @@
 use std::collections::HashSet;
 
-fn find_row(seat: &str) -> u64 {
-    let mut range_start: f64 = 0.0;
-    let mut range_end: f64 = 127.0;
-    for c in seat.chars().take(7) {
-        let half_range = ((range_end - range_start) / 2.0).ceil();
+fn find_location(seat: &str) -> (u64, u64) {
+    let mut min_r: f64 = 0.0;
+    let mut max_r: f64 = 127.0;
+    let mut min_c: f64 = 0.0;
+    let mut max_c: f64 = 7.0;
+    for c in seat.chars() {
+        let half_r = ((max_r - min_r) / 2.0).ceil();
+        let half_c = ((max_c - min_c) / 2.0).ceil();
         match c {
-            'F' => range_end -= half_range,
-            'B' => range_start += half_range,
-            _ => panic!("Unkown command, expected 'F' or 'B'"),
+            'F' => max_r -= half_r,
+            'B' => min_r += half_r,
+            'L' => max_c -= half_c,
+            'R' => min_c += half_c,
+            _ => panic!("Unkown command!"),
         }
     }
-    if range_start != range_end {
+    if min_r != max_r {
         panic!("Rows do not reduce to single row!")
     }
-    range_start as u64
-}
-
-fn find_col(seat: &str) -> u64 {
-    let mut range_start: f64 = 0.0;
-    let mut range_end: f64 = 7.0;
-    for c in seat.chars().skip(7) {
-        let half_range = ((range_end - range_start) / 2.0).ceil();
-        match c {
-            'L' => range_end -= half_range,
-            'R' => range_start += half_range,
-            _ => panic!("Unkown command, expected 'L' or 'R'"),
-        }
-    }
-    if range_start != range_end {
+    if min_c != max_c {
         panic!("Cols do not reduce to single column!")
     }
-    range_start as u64
+
+    (min_r as u64, min_c as u64)
 }
 
-fn find_id(loc: (u64, u64)) -> u64 {
+fn calculate_id(loc: (u64, u64)) -> u64 {
     // loc = (row, col)
     loc.0 * 8 + loc.1
 }
@@ -46,12 +38,11 @@ fn find_seat(ids: &Vec<u64>) -> u64 {
     let all_ids: HashSet<u64> = (smallest..=largest).collect();
     *all_ids.difference(&found_ids).next().unwrap()
 }
+
 fn main() -> std::io::Result<()> {
     let input = include_str!("../5.in").trim();
-    let rows = input.lines().map(find_row);
-    let cols = input.lines().map(find_col);
-    let locations = rows.zip(cols);
-    let ids = locations.map(find_id).collect::<Vec<u64>>();
+    let locations = input.lines().map(find_location);
+    let ids = locations.map(calculate_id).collect::<Vec<u64>>();
     println!("Part1: largest ID is {}", ids.iter().max().unwrap());
     println!("Part2: seat ID is {:?}", find_seat(&ids));
 
@@ -63,18 +54,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_find_row() {
-        assert_eq!(find_row("FBFBBFFRLR"), 44);
-        assert_eq!(find_row("BFFFBBFRRR"), 70);
-        assert_eq!(find_row("FFFBBBFRRR"), 14);
-        assert_eq!(find_row("BBFFBBFRLL"), 102);
-    }
-
-    #[test]
-    fn test_find_col() {
-        assert_eq!(find_col("FBFBBFFRLR"), 5);
-        assert_eq!(find_col("BFFFBBFRRR"), 7);
-        assert_eq!(find_col("FFFBBBFRRR"), 7);
-        assert_eq!(find_col("BBFFBBFRLL"), 4);
+    fn test_find_location() {
+        assert_eq!(find_location("FBFBBFFRLR"), (44, 5));
+        assert_eq!(find_location("BFFFBBFRRR"), (70, 7));
+        assert_eq!(find_location("FFFBBBFRRR"), (14, 7));
+        assert_eq!(find_location("BBFFBBFRLL"), (102, 4));
     }
 }
