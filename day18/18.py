@@ -1,3 +1,4 @@
+import multiprocessing
 import operator
 
 import pytest
@@ -71,10 +72,8 @@ if __name__ == "__main__":
     with open("18.in") as f:
         lines = f.read().strip().split("\n")
 
-    print("part1", end="")
-    total = 0
-    for line in lines:
-        v = evaluate(parse(line))
-        print(".", end="", flush=True)
-        total += v
-    print(f"{total}")
+    def do(line: str) -> int:
+        return evaluate(parse(line))
+
+    p = multiprocessing.Pool(4)
+    print(f"part1: {sum(p.map(do, lines))}")
